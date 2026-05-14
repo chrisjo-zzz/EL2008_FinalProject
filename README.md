@@ -160,15 +160,15 @@ Lalu juga ada convensi dalam menulis untuk mempermudah kita membaca dan mengerti
 
 | Tipe Elemen | Konvensi Penamaan | Awalan / Akhiran | Contoh |
 | :--- | :--- | :--- | :--- |
-| **Variabel (Non Struct)** | `camelCase` | Tidak ada | `itemCount`, `sensorValue` |
-| **Variabel Global** | Sesuaikan | `global_` (Awalan) | `global_totalSystemUptime`, `global_LinkedList` |
+| **Variabel Lokal** | `camelCase` | Tidak ada | `itemCount`, `sensorValue` |
+| **Variabel Global** | `camelCase` | `global_` (Awalan) | `global_totalSystemUptime`, `global_dataBaseLinkedList` |
 | **Konstanta & Makro** | `SCREAMING_SNAKE_CASE` | Tidak ada | `MAX_CATALOG_ITEMS` |
 | **Fungsi Kustom** | `PascalCase` | Tidak ada | `InitSensor()`, `CalculateTotal()` |
 | **Struct** | `PascalCase` | Tidak ada | `CatalogItem`, `AccelData` |
-| **Struct Element** | `snake_case` | Tidak Ada | `CatalogItem.id_benda`, `AccelDataPtr->data_lain` |
+| **Struct Element** | `snake_case` | Tidak Ada | `id_benda`, `nama_benda` |
 | **Enum** | `PascalCase` | Tidak ada | `SystemState`, `ErrorMode` |
 | **Nilai Enum** | `SCREAMING_SNAKE_CASE` | Tidak ada | `STATE_IDLE`, `STATE_ERROR` |
-| **Pointer** | Sesuaikan | `Ptr` (Akhiran) | `bufferPtr`, `LinkedListPtr` |
+| **Pointer** | `camelCase` | `Ptr` (Akhiran) | `bufferPtr`, `dataBaseLinkedListPtr` |
 
 Lalu untuk penamaan file `.cpp` dan `.h` gunakan `camelCase`.
 
