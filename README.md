@@ -1,22 +1,18 @@
-# HELOOO Kelompok 6
+# EL2008 Final Project
 
-![Hello](https://i.makeagif.com/media/5-08-2019/8RlZpL.gif)
+Please read the whole README file before working on the project.
 
-Hallo Kelompok 6. Tolong baca ini ya sebelum mulai NUBBEEEESSSS.
+## Needed Extension in VSCode (We all have to download it)
 
-## Extention yang Harus Kalian Download di VSCode
+Add extension **PlatformIO** (To compile and upload code to the Arduino) and **Wokwi** (To simulate Arduino) in VSCode
 
-Nanti kalian harus add extention **PlatformIO** (Untuk compile dan upload code ke Arduino) dan **Wokwi** (Untuk simulasikan Arduino) di VSCode
+[Add PlatformIO extension in VSCode](https://www.youtube.com/watch?v=xrAgUXFdrs8)
 
-[Tutor Add PlatformIO di VSCode](https://www.youtube.com/watch?v=xrAgUXFdrs8)
-
-[Tutor setup Wokwi di VScode](https://www.youtube.com/watch?v=ECNTyMm_5PE)
+[Setup Wokwi in VScode](https://www.youtube.com/watch?v=ECNTyMm_5PE)
 
 [PlatformIO Documentation](https://docs.platformio.org/en/latest/)
 
 [Wokwi Documentation](https://docs.wokwi.com/vscode/getting-started)
-
-![yuh huh](https://media.tenor.com/TL2rTF5jqHoAAAAM/k-on-yui.gif)
 
 ## Cara Pake Git
 
@@ -32,9 +28,7 @@ Abis itu kalian bisa clone github reponya di lokasi yang kalian inginin dengan k
 git clone https://github.com/AqeelGhani/tugas-besar-pmp-2026-kelompok-6.git
 ````
 
-Kalau ada pertanyaan  langsung tanya aku ya ;)
-
-![love you](https://giffiles.alphacoders.com/349/34952.gif)
+Kalau ada pertanyaan, langsung chat ke grup Line aja ya.
 
 ### Cara Pull dan bikin branch baru di git
 
@@ -57,10 +51,6 @@ nah abis itu kalian kalau mau pull dari main ke branch kalian bisa ketik
 ````bash
 git pull origin main
 ````
-
-Gampang KAN!!!!!!
-
-![cute](https://media.tenor.com/B50HsFYHbssAAAAM/anime-eiga-k-on.gif)
 
 ### Cara Commit Git
 
@@ -116,8 +106,6 @@ untuk `<jenis commit>` dapat mengikuti tabel berikut,
 
 Untuk penjelasan lebih lanjut dapat lihat di [repo ini](https://gist.github.com/qoomon/5dfcdf8eec66a051ecd85625518cfd13).
 
-![huehuehue](https://i.imgur.com/0jAef66.gif)
-
 ### Cara Push ke Github
 
 Setelah kalian udah ngelakuin perubahan, kalian bisa push ke github nihhh
@@ -137,10 +125,6 @@ git branch
 dan lihat apakah branch kalian adalah yang di highlight.
 
 Nanti setelah itu kalian bisa lakuin pull request kalau mau merge ke main.
-
-Kalau ini tanya Aku aja ya boss
-
-![Thumbs Up](https://i.pinimg.com/originals/a1/c0/0c/a1c00cb7b524b8dbe0bbb115571e57ca.gif)
 
 ## Cara Nulis Program
 
@@ -172,8 +156,6 @@ Lalu juga ada convensi dalam menulis untuk mempermudah kita membaca dan mengerti
 
 Lalu untuk penamaan file `.cpp` dan `.h` gunakan `camelCase`.
 
-![stop](https://i2.glitter-graphics.org/pub/2786/2786632gya6yrrqab.gif)
-
 ## Cara Compile Program
 
 Setelah kalian menulis program, kalian dapat mengcompile program dengan menggunakan **PlatformIo**.
@@ -191,10 +173,6 @@ Lalu kalian tinggal klik compile.
 Kalau kalian mau upload ke arduino kalian tinggal klik upload
 
 ![Compile 4](Image/Compile_4.png)
-
-Gampangkan ya!!!!
-
-![Kawaiiii](https://giffiles.alphacoders.com/352/35262.gif)
 
 ## Cara Simulasi
 
@@ -226,13 +204,3 @@ Lalu setelah itu kalian buka `diagram.json` dan pastikan pada mode Wokwi Diagram
 Lalu kalian tinggal klik play
 
 ![Simulasi 1](Image/Simulasi_1.png)
-
-Simple kan ya.....
-
-![Love](https://i.imgur.com/18yx2pI.gif)
-
-## Notes dari Aqeel si Paling Ganteng
-
-Kalau kalian ada pertanyaan atau merasa butuh tutorial, jangan segan untuk chat digrup ya. Terimakasih Semua.
-
-![Arigato](https://i.pinimg.com/originals/12/99/9e/12999e9ddf2a3b878e9350eca01f816b.gif)
