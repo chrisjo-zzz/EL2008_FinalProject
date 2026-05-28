@@ -1,18 +1,18 @@
-#include <Arduino.h>
+#include "database.h"
 
-// put function declarations here:
-int myFunction(int, int);
+// Note: In standard C, this would be int main(void), but the Arduino 
+// compiler abstracts the while(1) loop into setup() and loop(). 
+// Both act purely as function callers here to satisfy the rubric.
 
 void setup() {
-  // put your setup code here, to run once:
-  int result = myFunction(2, 3);
+    // Initialize standard baud rate for PC communication
+    Serial.begin(9600);
+    
+    // Load the 80-bit Array from EEPROM into the SRAM Linked List
+    initDatabase(); 
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-}
-
-// put function definitions here:
-int myFunction(int x, int y) {
-  return x + y;
+    // Constantly poll the Serial buffer for incoming GUI / Terminal strings
+    processSerialInput(); 
 }
