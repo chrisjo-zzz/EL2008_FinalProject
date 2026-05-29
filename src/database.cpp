@@ -2,8 +2,9 @@
 
 Node* head = NULL;
 Node* tail = NULL;
-const int MAX_ITEMS = 102; 
-const int ITEM_SIZE = sizeof(ItemData); // 10 bytes
+// Update the maximum limit based on the new 12-byte size
+const int MAX_ITEMS = 85; 
+const int ITEM_SIZE = sizeof(ItemData); // Now automatically 12 bytes
 
 // ==========================================
 // BIT-LEVEL COMPRESSION & DECOMPRESSION
@@ -33,11 +34,14 @@ void decodeChar5Bit(uint8_t inByte, char* outChar) {
     else *outChar = ' ';
 }
 
-void packItemData(ItemData* item, uint8_t id, const char* name, uint8_t cat, uint8_t loc, uint8_t stat, const char* picStr) {
+// UPDATED: Pack the three new quantities into the struct
+void packItemData(ItemData* item, uint8_t id, const char* name, uint8_t cat, uint8_t loc, uint8_t qTer, uint8_t qDip, uint8_t qRus, const char* picStr) {
     item->id = id;
     item->category = cat;
     item->location = loc;
-    item->status = stat;
+    item->qtyTersedia = qTer;
+    item->qtyDipinjam = qDip;
+    item->qtyRusak = qRus;
 
     // Pack 8-character Name
     uint8_t tempChar = 0;
@@ -197,6 +201,7 @@ void syncListToEEPROM() {
 // SERIAL I/O & PARSING
 // ==========================================
 
+// UPDATED: Print the three quantities instead of status
 void printInventory() {
     Node* current = head;
     if (current == NULL) {
@@ -215,7 +220,9 @@ void printInventory() {
         Serial.print(nameBuf); Serial.print(",");
         Serial.print(current->data.category); Serial.print(",");
         Serial.print(current->data.location); Serial.print(",");
-        Serial.print(current->data.status); Serial.print(",");
+        Serial.print(current->data.qtyTersedia); Serial.print(",");
+        Serial.print(current->data.qtyDipinjam); Serial.print(",");
+        Serial.print(current->data.qtyRusak); Serial.print(",");
         Serial.println(picBuf);
 
         current = current->next;
@@ -223,8 +230,8 @@ void printInventory() {
     Serial.println("END");
 }
 
+// UPDATED: Parse the new string format (ADD,ID,Name,Cat,Loc,Ter,Dip,Rus,PIC)
 void parseAndAddCommand(char* commandString) {
-    // Format: ADD,ID,Name,Cat,Loc,Stat,PIC
     char* token = strtok(commandString, ",");
     if (token == NULL) return;
 
@@ -232,11 +239,13 @@ void parseAndAddCommand(char* commandString) {
     token = strtok(NULL, ","); char* name = token;
     token = strtok(NULL, ","); uint8_t cat = atoi(token);
     token = strtok(NULL, ","); uint8_t loc = atoi(token);
-    token = strtok(NULL, ","); uint8_t stat = atoi(token);
+    token = strtok(NULL, ","); uint8_t qTer = atoi(token);
+    token = strtok(NULL, ","); uint8_t qDip = atoi(token);
+    token = strtok(NULL, ","); uint8_t qRus = atoi(token);
     token = strtok(NULL, ","); char* pic = token;
 
     ItemData newItem;
-    packItemData(&newItem, id, name, cat, loc, stat, pic);
+    packItemData(&newItem, id, name, cat, loc, qTer, qDip, qRus, pic);
     insertItem(newItem);
 }
 
