@@ -35,7 +35,7 @@ void printHeader() {
 #include <stdlib.h>
 #include "user_interface.h"
 
-void PrintMainMenu() {
+void printMainMenu() {
     printf("\n");
     printf("  +------------------------------------------+\n");
     printf("  |     SISTEM INVENTARISASI LABORATORIUM    |\n");
@@ -52,14 +52,14 @@ void PrintMainMenu() {
     printf("  +------------------------------------------+\n");
 }
 
-void InputChoice(int* choice) {
+void getUserChoice(int* choice) {
     printf("Pilihan (1-7): ");
     scanf("%d", choice);
     int c;
     while ((c = getchar()) != '\n' && c != EOF) {}
 }
 
-void PromptString(const char* promptText, char* inputBuffer, int maxLength) {
+void promptString(const char* promptText, char* inputBuffer, int maxLength) {
     printf("%s", promptText);
     
     if (fgets(inputBuffer, maxLength, stdin) != NULL) {
@@ -73,21 +73,21 @@ void PromptString(const char* promptText, char* inputBuffer, int maxLength) {
     }
 }
 
-void PromptInt(const char* promptText, int* inputValue) {
+void promptInt(const char* promptText, int* inputValue) {
     printf("%s", promptText);
     scanf("%d", inputValue);
     int c;
     while ((c = getchar()) != '\n' && c != EOF) {}
 }
 
-void PrintTableHeader() {
+void printTableHeader() {
     printf("\n");
     printf("  +------+------------------+------------+------------+-------+-------+-------+----------------+\n");
     printf("  |  ID  |   Nama Barang    |  Kategori  |   Lokasi   | Avail | Loan  | Broken|       PIC      |\n");
     printf("  +------+------------------+------------+------------+-------+-------+-------+----------------+\n");
 }
 
-void PrintTableFooter() {
+void printTableFooter() {
     printf("  +------+------------------+------------+------------+-------+-------+-------+----------------+\n");
 }
 
