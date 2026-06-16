@@ -82,13 +82,13 @@ void promptInt(const char* promptText, int* inputValue) {
 
 void printTableHeader() {
     printf("\n");
-    printf("  +------+------------------+------------+------------+-------+-------+-------+----------------+\n");
-    printf("  |  ID  |   Nama Barang    |  Kategori  |   Lokasi   | Avail | Loan  | Broken|       PIC      |\n");
-    printf("  +------+------------------+------------+------------+-------+-------+-------+----------------+\n");
+    printf("  +-----+----------+----------+--------+----------+----------+-------+-----+\n");
+    printf("  | ID  |   Nama   | Kategori | Lokasi | Tersedia | Dipinjam | Rusak | PIC |\n");
+    printf("  +-----+----------+----------+--------+----------+----------+-------+-----+\n");
 }
 
 void printTableFooter() {
-    printf("  +------+------------------+------------+------------+-------+-------+-------+----------------+\n");
+    printf("  +-----+----------+----------+--------+----------+----------+-------+-----+\n");
 }
 
 // Format nulis dalam tabel (kalau butuh)

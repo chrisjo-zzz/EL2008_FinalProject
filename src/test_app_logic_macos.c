@@ -12,7 +12,7 @@ int main()
     printf("        (macOS Environment)\n");
     printf("=====================================\n");
 
-    printf("Masukkan Port Arduino (contoh /dev/cu.usbmodem11301): ");
+    printf("Masukkan Port Arduino (contoh /dev/cu.usbmodem1301): ");
     scanf("%63s", portName);
 
     initSerialPort(portName);
