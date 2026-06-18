@@ -7,7 +7,35 @@
 #include "user_interface.h"
 #include "serial_comm.h"
 
-char serialBuffer[1024];
+char serialBuffer[4096]; // perbesar dari 1024, agar aman untuk maksimum 85 item
+
+void fetchSerialUntil(const char* targetKeyword){
+    serialBuffer[0] = '\0';
+    char tempBuffer[4096];
+    int attempts = 0;
+
+    // waktu timeout maksimal 3 detik (30 iterasi * 100ms)
+    while(attempts < 30){
+        tempBuffer[0] = '\0';
+        receiveSerialData(tempBuffer);
+
+        if(strlen(tempBuffer) > 0){
+            // gabungkan data baru ke buffer utama
+            if (strlen(serialBuffer) + strlen(tempBuffer) < sizeof(serialBuffer)) {
+                strcat(serialBuffer, tempBuffer);
+            }
+            
+            // berhenti menunggu jika keyword target ATAU kata kunci error ditemukan
+            if (strstr(serialBuffer, targetKeyword) != NULL || 
+                strstr(serialBuffer, "ERR") != NULL || 
+                strstr(serialBuffer, "ERROR") != NULL) {
+                break; 
+            }
+        }
+        usleep(100000); // tunggu 100ms agar CPU bekerja dengan aman
+        attempts++; 
+    }
+}
 
 void runApp()
 {
@@ -17,7 +45,7 @@ void runApp()
     while(running)
     {
         // Sleep(3000); // for WIndows OS!
-        sleep(3); 
+        // sleep(3); 
         printMainMenu();
         getUserChoice(&pilihan);
 
@@ -48,10 +76,10 @@ void runApp()
             default:
                 printf("\nPilihan tidak valid!\n");
         }
-        if (pilihan != 7)
-        {
-            printf("\nLoading...\n");
-        }
+        // if (pilihan != 7)
+        // {
+        //     printf("\nLoading...\n");
+        // }
     }
 }
 
@@ -71,7 +99,7 @@ void addInventory()
     }
 
     sendSerialData("GET_ALL\n");
-    receiveSerialData(serialBuffer);
+    fetchSerialUntil("END");
 
     char *line = strtok(serialBuffer, "\n");
     int idSudahAda = 0;
@@ -151,9 +179,11 @@ void addInventory()
         "ADD,%d,%.8s,%d,%d,%d,%d,%d,%.3s\n",id,nama,kategori,lokasi,qTer,qDip,qRus,pic
     );
 
+    printf("\nLoading...\n");
+
     sendSerialData(command);
-    receiveSerialData(serialBuffer);
-    printf("\n[Arduino] %s\n", serialBuffer);
+    fetchSerialUntil("ACK_ADD"); // tunggu hingga EEPROM selesai ditulis
+    // printf("\n[Arduino] %s\n", serialBuffer);
 }
 
 
@@ -174,8 +204,10 @@ void deleteInventory()
         id
     );
 
+    printf("\nLoading...\n");
+
     sendSerialData(command);
-    receiveSerialData(serialBuffer);
+    fetchSerialUntil("ACK_DEL"); 
     if (strstr(serialBuffer, "ERR") != NULL || strstr(serialBuffer, "ERROR") != NULL)
     {
         printf("ERROR: ID %d tidak ditemukan!\n", id);
@@ -195,7 +227,7 @@ void searchByID()
         &targetID
     );
     sendSerialData("GET_ALL\n");
-    receiveSerialData(serialBuffer);
+    fetchSerialUntil("END");
 
     char *line = strtok(serialBuffer, "\n");
 
@@ -263,15 +295,17 @@ void updateStockAndStatus()
         "UPDATE,%d,%d,%d,%d\n",id,qTer,qDip,qRus
     );
 
+    printf("\nLoading...\n");
+
     sendSerialData(command);
-    receiveSerialData(serialBuffer);
-    printf("\n[Arduino] %s\n", serialBuffer);
+    fetchSerialUntil("ACK_UPDATE");
+    // printf("\n[Arduino] %s\n", serialBuffer);
 }
 
 void displayAllInventory()
 {
     sendSerialData("GET_ALL\n");
-    receiveSerialData(serialBuffer);
+    fetchSerialUntil("END");
     printTableHeader();
 
     char *line = strtok(serialBuffer, "\n");
@@ -315,7 +349,7 @@ void displaySummary()
 
     sendSerialData("GET_ALL\n");
 
-    receiveSerialData(serialBuffer);
+    fetchSerialUntil("END");
 
     char *line = strtok(serialBuffer, "\n");
 

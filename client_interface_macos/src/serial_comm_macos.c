@@ -9,13 +9,16 @@
 
 static int serial_fd = -1;
 
-void initSerialPort(const char* portName) {
+void initSerialPort(const char* portName, int* statusFlag) {
+    // Set default status menjadi 0 (Gagal) di awal
+    *statusFlag = 0; 
+    
     printf("[SYSTEM] Mencoba terhubung ke %s (macOS/Linux)...\n", portName);
     
     serial_fd = open(portName, O_RDWR | O_NOCTTY | O_SYNC);
     if (serial_fd < 0) {
         printf("[ERROR] Gagal membuka port %s.\n", portName);
-        return;
+        return; // Fungsi langsung berhenti, status tetap 0
     }
 
     struct termios tty;
@@ -49,6 +52,9 @@ void initSerialPort(const char* portName) {
     sleep(2); 
     tcflush(serial_fd, TCIOFLUSH);
     printf("[SYSTEM] Koneksi Serial Siap!\n");
+    
+    // Jika eksekusi berhasil mencapai titik ini, ubah status menjadi 1 (Sukses)
+    *statusFlag = 1; 
 }
 
 void sendSerialData(const char* dataStr) {

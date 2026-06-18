@@ -5,10 +5,10 @@
 
 static HANDLE hSerial = INVALID_HANDLE_VALUE;
 
-void initSerialPort(const char* portName) {
+void initSerialPort(const char* portName, int* statusFlag) {
+    *statusFlag = 0; // Set default gagal
     printf("[SYSTEM] Mencoba terhubung ke %s (Windows)...\n", portName);
     
-    // Windows API requires a special format "\\.\COMX" for ports > 9
     char portPath[32];
     snprintf(portPath, sizeof(portPath), "\\\\.\\%s", portName);
 
@@ -23,7 +23,6 @@ void initSerialPort(const char* portName) {
         return;
     }
 
-    // Configure Serial Parameters (9600 8N1)
     DCB dcbSerialParams = {0};
     dcbSerialParams.DCBlength = sizeof(dcbSerialParams);
     
@@ -44,28 +43,27 @@ void initSerialPort(const char* portName) {
         return;
     }
 
-    // Set Timeouts to prevent the program from freezing
     COMMTIMEOUTS timeouts = {0};
     timeouts.ReadIntervalTimeout         = 50;
     timeouts.ReadTotalTimeoutConstant    = 50;
     timeouts.ReadTotalTimeoutMultiplier  = 10;
     timeouts.WriteTotalTimeoutConstant   = 50;
     timeouts.WriteTotalTimeoutMultiplier = 10;
-
     SetCommTimeouts(hSerial, &timeouts);
 
     printf("[SYSTEM] Port terbuka. Menunggu 2 detik untuk Arduino Boot...\n");
-    Sleep(2000); // Sleep() uses milliseconds in Windows
+    Sleep(2000); 
     PurgeComm(hSerial, PURGE_RXCLEAR | PURGE_TXCLEAR); 
     printf("[SYSTEM] Koneksi Serial Siap!\n");
+    
+    *statusFlag = 1; // Ubah menjadi sukses
 }
 
 void sendSerialData(const char* dataStr) {
     if (hSerial == INVALID_HANDLE_VALUE) return;
-
     DWORD bytesWritten;
     WriteFile(hSerial, dataStr, strlen(dataStr), &bytesWritten, NULL);
-    Sleep(50); // Give Arduino 50ms to process
+    Sleep(50); 
 }
 
 void receiveSerialData(char* buffer) {
@@ -78,7 +76,6 @@ void receiveSerialData(char* buffer) {
     char temp_char;
     int total_bytes = 0;
 
-    // Continuous loop until the timeout breaks it
     while (ReadFile(hSerial, &temp_char, 1, &bytesRead, NULL) && bytesRead > 0) {
         buffer[total_bytes] = temp_char;
         total_bytes++;

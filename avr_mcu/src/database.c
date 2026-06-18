@@ -1,20 +1,63 @@
 #include "database.h"
+#include <avr/io.h>
+#include <avr/eeprom.h>
+#include <stdlib.h>
+#include <string.h>
 
 Node* head = NULL;
 Node* tail = NULL;
-// Update the maximum limit based on the new 12-byte size
-const int MAX_ITEMS = 85; 
-const int ITEM_SIZE = sizeof(ItemData); // Now automatically 12 bytes
+
+// ==========================================
+// BARE-METAL UART DRIVER (16 MHz Clock)
+// ==========================================
+#define F_CPU 16000000UL
+#define BAUD 9600
+#define UBRR_VAL ((F_CPU/16/BAUD)-1)
+
+void initUART(void) {
+    UBRR0H = (uint8_t)(UBRR_VAL >> 8);
+    UBRR0L = (uint8_t)UBRR_VAL;
+    UCSR0B = (1 << RXEN0) | (1 << TXEN0); // Aktifkan RX dan TX
+    UCSR0C = (1 << UCSZ01) | (1 << UCSZ00); // 8-bit data
+}
+
+void transmitUART(char data) {
+    while (!(UCSR0A & (1 << UDRE0))); // Tunggu buffer kosong
+    UDR0 = data;
+}
+
+void printString(const char* str) {
+    while (*str) {
+        transmitUART(*str++);
+    }
+}
+
+// Pengganti Serial.available()
+uint8_t dataAvailableUART(void) {
+    return (UCSR0A & (1 << RXC0));
+}
+
+// Pengganti Serial.read()
+char receiveUART(void) {
+    while (!(UCSR0A & (1 << RXC0)));
+    return UDR0;
+}
+
+// Fungsi konversi integer ke string manual (pengganti Serial.print(int))
+void printInt(int num) {
+    char buf[10];
+    itoa(num, buf, 10);
+    printString(buf);
+}
 
 // ==========================================
 // BIT-LEVEL COMPRESSION & DECOMPRESSION
 // ==========================================
-
 void encodeChar6Bit(char inChar, uint8_t* outByte) {
     if (inChar >= 'A' && inChar <= 'Z') *outByte = inChar - 'A';
     else if (inChar >= 'a' && inChar <= 'z') *outByte = (inChar - 'a') + 26;
     else if (inChar >= '0' && inChar <= '9') *outByte = (inChar - '0') + 52;
-    else *outByte = 62; // Space/Unknown
+    else *outByte = 62; 
 }
 
 void decodeChar6Bit(uint8_t inByte, char* outChar) {
@@ -26,7 +69,7 @@ void decodeChar6Bit(uint8_t inByte, char* outChar) {
 
 void encodeChar5Bit(char inChar, uint8_t* outByte) {
     if (inChar >= 'A' && inChar <= 'Z') *outByte = inChar - 'A';
-    else *outByte = 26; // Space/Unknown
+    else *outByte = 26; 
 }
 
 void decodeChar5Bit(uint8_t inByte, char* outChar) {
@@ -34,7 +77,6 @@ void decodeChar5Bit(uint8_t inByte, char* outChar) {
     else *outChar = ' ';
 }
 
-// UPDATED: Pack the three new quantities into the struct
 void packItemData(ItemData* item, uint8_t id, const char* name, uint8_t cat, uint8_t loc, uint8_t qTer, uint8_t qDip, uint8_t qRus, const char* picStr) {
     item->id = id;
     item->category = cat;
@@ -43,7 +85,6 @@ void packItemData(ItemData* item, uint8_t id, const char* name, uint8_t cat, uin
     item->qtyDipinjam = qDip;
     item->qtyRusak = qRus;
 
-    // Pack 8-character Name
     uint8_t tempChar = 0;
     char padName[8] = {' ',' ',' ',' ',' ',' ',' ',' '};
     for(int i=0; i<8 && name[i]!='\0'; i++) padName[i] = name[i];
@@ -57,7 +98,6 @@ void packItemData(ItemData* item, uint8_t id, const char* name, uint8_t cat, uin
     encodeChar6Bit(padName[6], &tempChar); item->pName6 = tempChar;
     encodeChar6Bit(padName[7], &tempChar); item->pName7 = tempChar;
 
-    // Pack 3-character PIC into 15 bits
     char padPic[3] = {' ',' ',' '};
     for(int i=0; i<3 && picStr[i]!='\0'; i++) padPic[i] = picStr[i];
     
@@ -94,143 +134,128 @@ void unpackItemPIC(ItemData* item, char* outBuffer) {
 // ==========================================
 // LINKED LIST & MEMORY MANAGEMENT
 // ==========================================
-
-void initDatabase() {
+void initDatabase(void) {
     head = NULL;
     tail = NULL;
     
     for (int i = 0; i < MAX_ITEMS; i++) {
         ItemData temp;
-        EEPROM.get(i * ITEM_SIZE, temp);
+        // Pengganti EEPROM.get
+        eeprom_read_block(&temp, (const void*)(i * ITEM_SIZE), ITEM_SIZE);
         
-        if (temp.id != 127) {
-            Node* newNode = new Node;
+        if (temp.id != 127 && temp.id <= 127) { // Validasi tambahan keamanan
+            Node* newNode = (Node*)malloc(sizeof(Node));
+            if(newNode == NULL) continue; // Cegah crash jika SRAM penuh
+            
             newNode->data = temp;
             newNode->next = NULL;
 
             if (head == NULL) {
                 head = newNode;
-                tail = newNode; // First item is both head and tail
+                tail = newNode;
             } else {
-                tail->next = newNode; // Attach directly to the tail in O(1) time
-                tail = newNode;       // Update the tail pointer
+                tail->next = newNode;
+                tail = newNode;
             }
         }
     }
 }
 
+void syncListToEEPROM(void) {
+    // Timpa seluruh EEPROM dengan nilai 255 (Empty State)
+    for (int i = 0; i < 1024; i++) {
+        eeprom_write_byte((uint8_t*)i, 255); 
+    }
+
+    Node* current = head;
+    int index = 0;
+    while (current != NULL && index < MAX_ITEMS) {
+        // Pengganti EEPROM.put
+        eeprom_write_block(&(current->data), (void*)(index * ITEM_SIZE), ITEM_SIZE);
+        current = current->next;
+        index++;
+    }
+}
+
 void insertItem(ItemData newData) {
-    Node* newNode = new Node;
+    Node* newNode = (Node*)malloc(sizeof(Node));
+    if (newNode == NULL) {
+        printString("ERR: SRAM_FULL\n");
+        return;
+    }
+    
     newNode->data = newData;
     newNode->next = NULL;
 
-    // Case 1: Empty List
     if (head == NULL) {
         head = newNode;
         tail = newNode;
-    } 
-    // Case 2: O(1) Insertion at the Tail
-    else {
-        tail->next = newNode; // Point the current tail to the new node
-        tail = newNode;       // Make the new node the official tail
+    } else {
+        tail->next = newNode;
+        tail = newNode;
     }
 
     syncListToEEPROM();
-    Serial.println("ACK_ADD");
+    printString("ACK_ADD\n");
 }
 
 void deleteItem(uint8_t targetId) {
     if (head == NULL) {
-        Serial.println("ERR: EMPTY");
+        printString("ERR: EMPTY\n");
         return;
     }
 
     Node* current = head;
     Node* previous = NULL;
 
-    // Traverse to find the ID
     while (current != NULL && current->data.id != targetId) {
         previous = current;
         current = current->next;
     }
 
     if (current == NULL) {
-        Serial.println("ERR: NOT_FOUND");
+        printString("ERR: NOT_FOUND\n");
         return;
     }
 
-    // Case 1: Deleting the FIRST node (Head)
     if (previous == NULL) {
         head = current->next;
-        if (head == NULL) {
-            tail = NULL; // If we deleted the only item, list is now empty
-        }
-    } 
-    // Case 2 & 3: Deleting the MIDDLE or LAST node
-    else {
+        if (head == NULL) tail = NULL;
+    } else {
         previous->next = current->next;
-        
-        // CRITICAL: If we just deleted the very last node, we MUST update the tail pointer
-        if (current->next == NULL) {
-            tail = previous;
-        }
+        if (current->next == NULL) tail = previous;
     }
 
-    delete current; // Free SRAM
+    free(current); // Pengganti fungsi delete
     syncListToEEPROM();
-    Serial.println("ACK_DEL");
+    printString("ACK_DEL\n");
 }
 
-void updateItem(uint8_t targetId,uint8_t qTer,uint8_t qDip,uint8_t qRus)
-{
+void updateItem(uint8_t targetId, uint8_t qTer, uint8_t qDip, uint8_t qRus) {
     Node* current = head;
 
-    while(current != NULL)
-    {
-        if(current->data.id == targetId)
-        {
+    while(current != NULL) {
+        if(current->data.id == targetId) {
             current->data.qtyTersedia = qTer;
             current->data.qtyDipinjam = qDip;
             current->data.qtyRusak = qRus;
 
             syncListToEEPROM();
-
-            Serial.println("ACK_UPDATE");
-
+            printString("ACK_UPDATE\n");
             return;
         }
-
         current = current->next;
     }
-
-    Serial.println("ERR: NOT_FOUND");
-}
-
-void syncListToEEPROM() {
-    // Overwrite entire EEPROM with 127 (Empty State)
-    for (int i = 0; i < EEPROM.length(); i++) {
-        EEPROM.write(i, 255); 
-    }
-
-    // Dump Linked List back into sequential EEPROM array
-    Node* current = head;
-    int index = 0;
-    while (current != NULL && index < MAX_ITEMS) {
-        EEPROM.put(index * ITEM_SIZE, current->data);
-        current = current->next;
-        index++;
-    }
+    printString("ERR: NOT_FOUND\n");
 }
 
 // ==========================================
 // SERIAL I/O & PARSING
 // ==========================================
-
-// UPDATED: Print the three quantities instead of status
-void printInventory() {
+void printInventory(void) {
     Node* current = head;
     if (current == NULL) {
-        Serial.println("EMPTY");
+        printString("EMPTY\n");
         return;
     }
 
@@ -241,21 +266,20 @@ void printInventory() {
         unpackItemName(&(current->data), nameBuf);
         unpackItemPIC(&(current->data), picBuf);
 
-        Serial.print(current->data.id); Serial.print(",");
-        Serial.print(nameBuf); Serial.print(",");
-        Serial.print(current->data.category); Serial.print(",");
-        Serial.print(current->data.location); Serial.print(",");
-        Serial.print(current->data.qtyTersedia); Serial.print(",");
-        Serial.print(current->data.qtyDipinjam); Serial.print(",");
-        Serial.print(current->data.qtyRusak); Serial.print(",");
-        Serial.println(picBuf);
+        printInt(current->data.id); printString(",");
+        printString(nameBuf); printString(",");
+        printInt(current->data.category); printString(",");
+        printInt(current->data.location); printString(",");
+        printInt(current->data.qtyTersedia); printString(",");
+        printInt(current->data.qtyDipinjam); printString(",");
+        printInt(current->data.qtyRusak); printString(",");
+        printString(picBuf); printString("\n");
 
         current = current->next;
     }
-    Serial.println("END");
+    printString("END\n");
 }
 
-// UPDATED: Parse the new string format (ADD,ID,Name,Cat,Loc,Ter,Dip,Rus,PIC)
 void parseAndAddCommand(char* commandString) {
     char* token = strtok(commandString, ",");
     if (token == NULL) return;
@@ -274,40 +298,41 @@ void parseAndAddCommand(char* commandString) {
     insertItem(newItem);
 }
 
-void processSerialInput() {
-    if (Serial.available() > 0) {
-        char buffer[64];
-        size_t len = Serial.readBytesUntil('\n', buffer, sizeof(buffer) - 1);
-        buffer[len] = '\0'; 
+// Pengganti readBytesUntil manual
+void processSerialInput(void) {
+    static char buffer[64];
+    static uint8_t index = 0;
 
-        if (strncmp(buffer, "ADD", 3) == 0) {
-            parseAndAddCommand(buffer);
+    if (dataAvailableUART()) {
+        char c = receiveUART();
+        
+        if (c == '\n') {
+            buffer[index] = '\0'; // Tutup string
+            
+            if (strncmp(buffer, "ADD", 3) == 0) {
+                parseAndAddCommand(buffer);
+            } 
+            else if (strncmp(buffer, "DEL", 3) == 0) {
+                char* token = strtok(buffer, ",");
+                token = strtok(NULL, ",");
+                if (token != NULL) deleteItem(atoi(token));
+            }
+            else if (strncmp(buffer,"UPDATE",6) == 0) {
+                char* token = strtok(buffer,",");
+                token = strtok(NULL,","); uint8_t id = atoi(token);
+                token = strtok(NULL,","); uint8_t qTer = atoi(token);
+                token = strtok(NULL,","); uint8_t qDip = atoi(token);
+                token = strtok(NULL,","); uint8_t qRus = atoi(token);
+                updateItem(id,qTer,qDip,qRus);
+            }
+            else if (strncmp(buffer, "GET_ALL", 7) == 0) {
+                printInventory();
+            }
+            
+            index = 0; // Reset buffer untuk perintah selanjutnya
         } 
-        else if (strncmp(buffer, "DEL", 3) == 0) {
-            char* token = strtok(buffer, ",");
-            token = strtok(NULL, ",");
-            deleteItem(atoi(token));
-        }
-        else if (strncmp(buffer,"UPDATE",6) == 0) {
-            char* token;
-
-            token = strtok(buffer,",");
-            token = strtok(NULL,",");
-            uint8_t id = atoi(token);
-
-            token = strtok(NULL,",");
-            uint8_t qTer = atoi(token);
-
-            token = strtok(NULL,",");
-            uint8_t qDip = atoi(token);
-
-            token = strtok(NULL,",");
-            uint8_t qRus = atoi(token);
-
-            updateItem(id,qTer,qDip,qRus);
-        }
-        else if (strncmp(buffer, "GET_ALL", 7) == 0) {
-            printInventory();
+        else if (index < 63) {
+            buffer[index++] = c;
         }
     }
 }
